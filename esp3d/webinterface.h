@@ -27,23 +27,11 @@
 #define FS_NO_GLOBALS
 #endif
 #include <FS.h>
-#if defined(ASYNCWEBSERVER)
-#include <ESPAsyncWebServer.h>
-#endif
 #ifdef ARDUINO_ARCH_ESP8266
-#if defined(ASYNCWEBSERVER)
-#include <ESPAsyncTCP.h>
-#else
 #include <ESP8266WebServer.h>
-#endif
 #else //ESP32
-#if defined(ASYNCWEBSERVER)
-#include <AsyncTCP.h>
-#else
 #include <WebServer.h>
 #endif
-#endif
-
 
 struct auth_ip {
     IPAddress ip;
@@ -59,20 +47,10 @@ class WEBINTERFACE_CLASS
 public:
     WEBINTERFACE_CLASS (int port = 80);
     ~WEBINTERFACE_CLASS();
-#if defined(ASYNCWEBSERVER)
-    AsyncWebServer web_server;
-    AsyncEventSource web_events;
-#else
 #ifdef ARDUINO_ARCH_ESP8266
     ESP8266WebServer web_server;
 #else
     WebServer web_server;
-#endif
-#endif
-#ifdef WS_DATA_FEATURE
-#if defined(ASYNCWEBSERVER)
-    AsyncWebSocket  web_socket;
-#endif
 #endif
     bool restartmodule;
     String getContentType (String filename);

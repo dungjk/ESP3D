@@ -20,7 +20,6 @@
 
 #include <pgmspace.h>
 #include "config.h"
-#if !defined(ASYNCWEBSERVER)
 
 #include "webinterface.h"
 #include "wificonf.h"
@@ -1378,5 +1377,3 @@ void SDFile_serial_upload()
     }
 #endif //USE_AS_UPDATER_ONLY
 }
-
-#endif

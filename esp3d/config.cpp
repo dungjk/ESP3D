@@ -69,14 +69,7 @@ void  CONFIG::wdtFeed()
 
 void CONFIG::wait (uint32_t milliseconds)
 {
-#if defined(ASYNCWEBSERVER)
-    uint32_t timeout = millis();
-    while ( (millis() - timeout) < milliseconds) {
-        wdtFeed();
-    }
-#else
     delay(milliseconds);
-#endif
 }
 
 bool CONFIG::SetFirmwareTarget (uint8_t fw)
