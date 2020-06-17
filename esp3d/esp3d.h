@@ -21,8 +21,11 @@
 #ifndef ESP3D_H
 #define ESP3D_H
 //be sure correct IDE and settings are used for ESP8266 or ESP32
-#if !(defined( ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32))
-#error Oops!  Make sure you have 'ESP8266 or ESP32' compatible board selected from the 'Tools -> Boards' menu.
+#ifdef ARDUINO_ARCH_ESP8266
+#error We've dropped support for ESP8266. If you're using esp8266 please use https://github.com/luc-github/ESP3D
+#endif
+#ifndef ARDUINO_ARCH_ESP32
+#error Oops!  Make sure you have ESP32 compatible board selected from the 'Tools -> Boards' menu.
 #endif
 
 #include "Arduino.h"

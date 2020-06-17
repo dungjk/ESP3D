@@ -31,28 +31,18 @@
 #define FS_NO_GLOBALS
 #endif
 #include <FS.h>
-#if defined(ARDUINO_ARCH_ESP8266)
-#include "ESP8266WiFi.h"
-#include <ESP8266WebServer.h>
-#endif
-#if defined(ARDUINO_ARCH_ESP32)
 #include <WiFi.h>
-#include <WebServer.h>
+#include "core/http/WebServer.h"
 #include "SPIFFS.h"
 #include "Update.h"
 #include <esp_ota_ops.h>
-#endif
 
 #include "GenLinkedList.h"
 #include "command.h"
 #include "espcom.h"
 
 #ifdef SSDP_FEATURE
-#ifdef ARDUINO_ARCH_ESP32
 #include <ESP32SSDP.h>
-#else
-#include <ESP8266SSDP.h>
-#endif
 #endif
 
 //embedded response file if no files on SPIFFS
@@ -108,13 +98,8 @@ void cancelUpload()
     {
       HTTPUpload &upload = (web_interface->web_server).upload();
       upload.status = UPLOAD_FILE_ABORTED;
-#if defined(ARDUINO_ARCH_ESP8266)
-      web_interface->web_server.client().stopAll();
-#endif
-#if defined(ARDUINO_ARCH_ESP32)
       errno = ECONNABORTED;
       web_interface->web_server.client().stop();
-#endif
       delay(100);
     }
   }
@@ -479,11 +464,6 @@ void handleFileList()
         {
           status = shortname + F(" deleted");
           //what happen if no "/." and no other subfiles ?
-#if defined(ARDUINO_ARCH_ESP8266)
-          FS_DIR dir = SPIFFS.openDir(path);
-          if (!dir.next())
-          {
-#else
           String ptmp = path;
           if ((path != "/") && (path[path.length() - 1] = '/'))
           {
@@ -493,7 +473,6 @@ void handleFileList()
           FS_FILE dircontent = dir.openNextFile();
           if (!dircontent)
           {
-#endif
             //keep directory alive even empty
             FS_FILE r = SPIFFS.open(path + "/.", SPIFFS_FILE_WRITE);
             if (r)
@@ -521,32 +500,19 @@ void handleFileList()
       if (filename != "/")
       {
         bool delete_error = false;
-#if defined(ARDUINO_ARCH_ESP8266)
-        FS_DIR dir = SPIFFS.openDir(path + shortname);
-        {
-          while (dir.next())
-          {
-#else
         FS_FILE dir = SPIFFS.open(path + shortname);
         {
           FS_FILE file2deleted = dir.openNextFile();
           while (file2deleted)
           {
-#endif
-#if defined(ARDUINO_ARCH_ESP8266)
-            String fullpath = dir.fileName();
-#else
             String fullpath = file2deleted.name();
-#endif
             if (!SPIFFS.remove(fullpath))
             {
               delete_error = true;
               status = F("Cannot deleted ");
               status += fullpath;
             }
-#if defined(ARDUINO_ARCH_ESP32)
             file2deleted = dir.openNextFile();
-#endif
           }
         }
         if (!delete_error)
@@ -585,29 +551,19 @@ void handleFileList()
     }
   }
   String jsonfile = "{";
-#if defined(ARDUINO_ARCH_ESP8266)
-  FS_DIR dir = SPIFFS.openDir(path);
-#else
   String ptmp = path;
   if ((path != "/") && (path[path.length() - 1] = '/'))
   {
     ptmp = path.substring(0, path.length() - 1);
   }
   FS_FILE dir = SPIFFS.open(ptmp);
-#endif
   jsonfile += "\"files\":[";
   bool firstentry = true;
   String subdirlist = "";
-#if defined(ARDUINO_ARCH_ESP8266)
-  while (dir.next())
-  {
-    String filename = dir.fileName();
-#else
   File fileparsed = dir.openNextFile();
   while (fileparsed)
   {
     String filename = fileparsed.name();
-#endif
     String size = "";
     bool addtolist = true;
     //remove path from name
@@ -640,11 +596,7 @@ void handleFileList()
       //do not add "." file
       if (!((filename == ".") || (filename == "")))
       {
-#if defined(ARDUINO_ARCH_ESP8266)
-        size = CONFIG::formatBytes(dir.fileSize());
-#else
         size = CONFIG::formatBytes(fileparsed.size());
-#endif
       }
       else
       {
@@ -669,24 +621,14 @@ void handleFileList()
       jsonfile += "\"";
       jsonfile += "}";
     }
-#ifdef ARDUINO_ARCH_ESP32
     fileparsed = dir.openNextFile();
-#endif
   }
   jsonfile += "],";
   jsonfile += "\"path\":\"" + path + "\",";
   jsonfile += "\"status\":\"" + status + "\",";
-  size_t totalBytes;
-  size_t usedBytes;
-#if defined(ARDUINO_ARCH_ESP8266)
-  fs::FSInfo info;
-  SPIFFS.info(info);
-  totalBytes = info.totalBytes;
-  usedBytes = info.usedBytes;
-#else
-  totalBytes = SPIFFS.totalBytes();
-  usedBytes = SPIFFS.usedBytes();
-#endif
+
+  size_t totalBytes = SPIFFS.totalBytes();
+  size_t usedBytes = SPIFFS.usedBytes();
   jsonfile += "\"total\":\"" + CONFIG::formatBytes(totalBytes) + "\",";
   jsonfile += "\"used\":\"" + CONFIG::formatBytes(usedBytes) + "\",";
   jsonfile.concat(F("\"occupation\":\""));
@@ -748,14 +690,7 @@ void SPIFFSFileupload()
         if ((web_interface->web_server).hasArg(sizeargname.c_str()))
         {
           uint32_t filesize = (web_interface->web_server).arg(sizeargname.c_str()).toInt();
-#if defined(ARDUINO_ARCH_ESP8266)
-          fs::FSInfo info;
-          SPIFFS.info(info);
-          uint32_t freespace = info.totalBytes - info.usedBytes;
-#endif
-#if defined(ARDUINO_ARCH_ESP32)
           uint32_t freespace = SPIFFS.totalBytes() - SPIFFS.usedBytes();
-#endif
 
           if (filesize > freespace)
           {
@@ -876,13 +811,7 @@ void WebUpdateUpload()
         web_interface->_upload_status = UPLOAD_STATUS_ONGOING;
         String sizeargname = upload.filename + "S";
 
-#if defined(ARDUINO_ARCH_ESP8266)
-        WiFiUDP::stopAll();
-#endif
         size_t flashsize = 0;
-#if defined(ARDUINO_ARCH_ESP8266)
-        maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-#else
         if (esp_ota_get_running_partition())
         {
           const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
@@ -891,7 +820,6 @@ void WebUpdateUpload()
             maxSketchSpace = partition->size;
           }
         }
-#endif
         if ((web_interface->web_server).hasArg(sizeargname.c_str()))
         {
           flashsize = (web_interface->web_server).arg(sizeargname).toInt();

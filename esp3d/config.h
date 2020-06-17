@@ -169,7 +169,6 @@
 //number of clients allowed to use data port at once
 #define MAX_SRV_CLIENTS 1
 
-#ifdef ARDUINO_ARCH_ESP32
 #include "FS.h"
 #include "SPIFFS.h"
 using fs::File;
@@ -195,14 +194,6 @@ using fs::File;
 #define WIFI_EVENT_STAMODE_DISCONNECTED SYSTEM_EVENT_STA_DISCONNECTED
 #define WIFI_EVENT_STAMODE_GOT_IP SYSTEM_EVENT_STA_GOT_IP
 #define WIFI_EVENT_SOFTAPMODE_STACONNECTED SYSTEM_EVENT_AP_STACONNECTED
-#else
-#define FS_DIR fs::Dir
-#define FS_FILE fs::File
-#define SD_FILE_READ FILE_READ
-#define SPIFFS_FILE_READ "r"
-#define SD_FILE_WRITE FILE_WRITE
-#define SPIFFS_FILE_WRITE "w"
-#endif
 
 //WEBHOST_SDCARD_FEATURE : to use SDCard to host webpages
 //NOT YET IMPLEMENTED!!! Keep it as TODO
@@ -261,14 +252,6 @@ extern const char *pathToFileName(const char *path);
 #define CONFIG_h
 
 #include <Arduino.h>
-#ifdef ARDUINO_ARCH_ESP8266
-extern "C"
-{
-#include "user_interface.h"
-}
-#else
-
-#endif
 #include "wificonf.h"
 
 typedef enum
@@ -438,11 +421,7 @@ const int DEFAULT_DHT_INTERVAL = 30;
 //SPI_HALF_SPEED, SPI_DIV6_SPEED, SPI_QUARTER_SPEED,
 //SPI_EIGHTH_SPEED, SPI_SIXTEENTH_SPEED
 //Decrease if reader give error
-#ifdef ARDUINO_ARCH_ESP8266
-#define DEFAULT_SDREADER_SPEED 2
-#else
 #define DEFAULT_SDREADER_SPEED 4
-#endif
 
 const uint16_t Setting[][2] = {
     {EP_WIFI_MODE, LEVEL_ADMIN},              //0

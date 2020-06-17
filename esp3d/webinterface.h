@@ -27,49 +27,42 @@
 #define FS_NO_GLOBALS
 #endif
 #include <FS.h>
-#ifdef ARDUINO_ARCH_ESP8266
-#include <ESP8266WebServer.h>
-#else //ESP32
-#include <WebServer.h>
-#endif
+#include "core/http/WebServer.h"
 
-struct auth_ip {
-    IPAddress ip;
-    level_authenticate_type level;
-    char userID[17];
-    char sessionID[17];
-    uint32_t last_time;
-    auth_ip * _next;
+struct auth_ip
+{
+  IPAddress ip;
+  level_authenticate_type level;
+  char userID[17];
+  char sessionID[17];
+  uint32_t last_time;
+  auth_ip *_next;
 };
 
 class WEBINTERFACE_CLASS
 {
 public:
-    WEBINTERFACE_CLASS (int port = 80);
-    ~WEBINTERFACE_CLASS();
-#ifdef ARDUINO_ARCH_ESP8266
-    ESP8266WebServer web_server;
-#else
-    WebServer web_server;
-#endif
-    bool restartmodule;
-    String getContentType (String filename);
-    level_authenticate_type is_authenticated();
-    bool AddAuthIP (auth_ip * item);
-    bool blockserial;
+  WEBINTERFACE_CLASS(int port = 80);
+  ~WEBINTERFACE_CLASS();
+  WebServer web_server;
+  bool restartmodule;
+  String getContentType(String filename);
+  level_authenticate_type is_authenticated();
+  bool AddAuthIP(auth_ip *item);
+  bool blockserial;
 #ifdef AUTHENTICATION_FEATURE
-    level_authenticate_type ResetAuthIP (IPAddress ip, const char * sessionID);
-    auth_ip * GetAuth (IPAddress ip, const char * sessionID);
-    bool ClearAuthIP (IPAddress ip, const char * sessionID);
-    char * create_session_ID();
+  level_authenticate_type ResetAuthIP(IPAddress ip, const char *sessionID);
+  auth_ip *GetAuth(IPAddress ip, const char *sessionID);
+  bool ClearAuthIP(IPAddress ip, const char *sessionID);
+  char *create_session_ID();
 #endif
-    uint8_t _upload_status;
+  uint8_t _upload_status;
 
 private:
-    auth_ip * _head;
-    uint8_t _nb_ip;
+  auth_ip *_head;
+  uint8_t _nb_ip;
 };
 
-extern WEBINTERFACE_CLASS * web_interface;
+extern WEBINTERFACE_CLASS *web_interface;
 
 #endif

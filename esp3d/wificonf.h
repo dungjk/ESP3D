@@ -23,16 +23,10 @@
 #include <Arduino.h>
 #include "config.h"
 #include "IPAddress.h"
-#ifdef ARDUINO_ARCH_ESP8266
-#include "ESP8266WiFi.h"
-#ifdef MDNS_FEATURE
-#include <ESP8266mDNS.h>
-#endif
-#else
 #include <WiFi.h>
+
 #ifdef MDNS_FEATURE
 #include <ESPmDNS.h>
-#endif
 #endif
 
 class WIFI_CONFIG
