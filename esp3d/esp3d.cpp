@@ -73,223 +73,223 @@ Esp3D::Esp3D()
 //Begin which setup everything
 void Esp3D::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 {
-  // init:
-  //WiFi.disconnect();
-  WiFi.mode(WIFI_OFF);
-  wifi_config.WiFi_on = false;
-  //check EEPROM Version
+    // init:
+    //WiFi.disconnect();
+    WiFi.mode(WIFI_OFF);
+    wifi_config.WiFi_on = false;
+    //check EEPROM Version
 #if defined(DEBUG_ESP3D) && defined(DEBUG_OUTPUT_SERIAL)
-  CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
-  delay(2000);
-  LOG("\r\nDebug Serial set\r\n")
+    CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
+    delay(2000);
+    LOG("\r\nDebug Serial set\r\n")
 #endif
-  CONFIG::adjust_EEPROM_settings();
-  CONFIG::InitOutput();
+    CONFIG::adjust_EEPROM_settings();
+    CONFIG::InitOutput();
 #ifdef ESP_OLED_FEATURE
-  OLED_DISPLAY::begin();
-  OLED_DISPLAY::splash();
+    OLED_DISPLAY::begin();
+    OLED_DISPLAY::splash();
 #endif
-  bool breset_config = false;
-  web_interface = NULL;
+    bool breset_config = false;
+    web_interface = NULL;
 #ifdef TCP_IP_DATA_FEATURE
-  data_server = NULL;
+    data_server = NULL;
 #endif
 
 #ifdef MKS_TFT_FEATURE
-  startdelayms = 1000;
+    startdelayms = 1000;
 #endif
 #ifdef ESP_OLED_FEATURE
-  uint32_t start_display_time = millis();
-  uint32_t now = millis();
-  while (now - start_display_time < startdelayms)
-  {
-    int v = (100 * (millis() - start_display_time)) / startdelayms;
-    OLED_DISPLAY::display_mini_progress(v);
-    OLED_DISPLAY::update_lcd();
-    delay(100);
-    now = millis();
-  }
+    uint32_t start_display_time = millis();
+    uint32_t now = millis();
+    while (now - start_display_time < startdelayms)
+    {
+        int v = (100 * (millis() - start_display_time)) / startdelayms;
+        OLED_DISPLAY::display_mini_progress(v);
+        OLED_DISPLAY::update_lcd();
+        delay(100);
+        now = millis();
+    }
 #else
-  delay(startdelayms);
+    delay(startdelayms);
 #endif
-  CONFIG::InitDirectSD();
-  CONFIG::InitPins();
+    CONFIG::InitDirectSD();
+    CONFIG::InitPins();
 #ifdef RECOVERY_FEATURE
-  delay(recoverydelayms);
-  //check if reset config is requested
-  if (digitalRead(RESET_CONFIG_PIN) == 0)
-  {
-    breset_config = true; //if requested =>reset settings
-  }
+    delay(recoverydelayms);
+    //check if reset config is requested
+    if (digitalRead(RESET_CONFIG_PIN) == 0)
+    {
+        breset_config = true; //if requested =>reset settings
+    }
 #endif
-  //check if EEPROM has value
-  if (!CONFIG::InitBaudrate() || !CONFIG::InitExternalPorts())
-  {
-    breset_config = true; //cannot access to config settings=> reset settings
-    LOG("Error no EEPROM access\r\n")
-  }
-  //reset is requested
-  if (breset_config)
-  {
-    //update EEPROM with default settings
-    CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
-    delay(2000);
-    ESPCOM::println(F("ESP EEPROM reset"), PRINTER_PIPE);
+    //check if EEPROM has value
+    if (!CONFIG::InitBaudrate() || !CONFIG::InitExternalPorts())
+    {
+        breset_config = true; //cannot access to config settings=> reset settings
+        LOG("Error no EEPROM access\r\n")
+    }
+    //reset is requested
+    if (breset_config)
+    {
+        //update EEPROM with default settings
+        CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
+        delay(2000);
+        ESPCOM::println(F("ESP EEPROM reset"), PRINTER_PIPE);
 #ifdef DEBUG_ESP3D
-    CONFIG::print_config(DEBUG_PIPE, true);
-    delay(1000);
+        CONFIG::print_config(DEBUG_PIPE, true);
+        delay(1000);
 #endif
-    CONFIG::reset_config();
-    delay(1000);
-    //put some default value to a void some exception at first start
-    WiFi.mode(WIFI_AP);
-    wifi_config.WiFi_on = true;
-    esp_wifi_set_protocol(ESP_IF_WIFI_AP, WIFI_PHY_MODE_11G);
-    CONFIG::esp_restart();
-  }
+        CONFIG::reset_config();
+        delay(1000);
+        //put some default value to a void some exception at first start
+        WiFi.mode(WIFI_AP);
+        wifi_config.WiFi_on = true;
+        esp_wifi_set_protocol(ESP_IF_WIFI_AP, WIFI_PHY_MODE_11G);
+        CONFIG::esp_restart();
+    }
 #if defined(DEBUG_ESP3D) && defined(DEBUG_OUTPUT_SERIAL)
-  LOG("\r\n");
-  delay(500);
-  ESPCOM::flush(DEFAULT_PRINTER_PIPE);
+    LOG("\r\n");
+    delay(500);
+    ESPCOM::flush(DEFAULT_PRINTER_PIPE);
 #endif
-  //get target FW
-  CONFIG::InitFirmwareTarget();
-  delay(100);
-  //Update is done if any so should be Ok
-  SPIFFS.begin(true);
-  //basic autostart
-  if (SPIFFS.exists("/autostart.g"))
-  {
-    FS_FILE file = SPIFFS.open("/autostart.g", SPIFFS_FILE_READ);
-    if (file)
+    //get target FW
+    CONFIG::InitFirmwareTarget();
+    delay(100);
+    //Update is done if any so should be Ok
+    SPIFFS.begin(true);
+    //basic autostart
+    if (SPIFFS.exists("/autostart.g"))
     {
-      String autoscript = file.readString();
-      if (autoscript.length() > 0)
-      {
-        //clean line
-        autoscript.replace("\n", "");
-        autoscript.replace("\r", "");
-        ESPCOM::println(autoscript.c_str(), DEFAULT_PRINTER_PIPE);
-      }
-      file.close();
+        FS_FILE file = SPIFFS.open("/autostart.g", SPIFFS_FILE_READ);
+        if (file)
+        {
+            String autoscript = file.readString();
+            if (autoscript.length() > 0)
+            {
+                //clean line
+                autoscript.replace("\n", "");
+                autoscript.replace("\r", "");
+                ESPCOM::println(autoscript.c_str(), DEFAULT_PRINTER_PIPE);
+            }
+            file.close();
+        }
     }
-  }
-  //setup wifi according settings
-  if (!wifi_config.Setup())
-  {
-    ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
-    //try again in AP mode
-    if (!wifi_config.Setup(true))
+    //setup wifi according settings
+    if (!wifi_config.Setup())
     {
-      ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
-      wifi_config.Safe_Setup();
+        ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
+        //try again in AP mode
+        if (!wifi_config.Setup(true))
+        {
+            ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
+            wifi_config.Safe_Setup();
+        }
     }
-  }
-  delay(100);
-  //setup servers
-  if (!wifi_config.Enable_servers())
-  {
-    ESPCOM::println(F("Error enabling servers"), PRINTER_PIPE);
-  }
-  LOG("Setup Done\r\n");
+    delay(100);
+    //setup servers
+    if (!wifi_config.Enable_servers())
+    {
+        ESPCOM::println(F("Error enabling servers"), PRINTER_PIPE);
+    }
+    LOG("Setup Done\r\n");
 }
 
 //Process which handle all input
 void Esp3D::process()
 {
-  //web requests for sync
-  web_interface->web_server.handleClient();
-  socket_server->loop();
-  //be sure wifi is on to proceed wifi function
-  if ((WiFi.getMode() != WIFI_OFF) || wifi_config.WiFi_on)
-  {
-#ifdef CAPTIVE_PORTAL_FEATURE
-    if (WiFi.getMode() != WIFI_STA)
+    //web requests for sync
+    web_interface->web_server.handleClient();
+    socket_server->loop();
+    //be sure wifi is on to proceed wifi function
+    if ((WiFi.getMode() != WIFI_OFF) || wifi_config.WiFi_on)
     {
-      dnsServer.processNextRequest();
-    }
+#ifdef CAPTIVE_PORTAL_FEATURE
+        if (WiFi.getMode() != WIFI_STA)
+        {
+            dnsServer.processNextRequest();
+        }
 #endif
-    //TODO use config
-    CONFIG::wait(0);
-  }
-  //read / bridge all input
-  ESPCOM::bridge();
-  //in case of restart requested
-  if (web_interface->restartmodule)
-  {
-    CONFIG::esp_restart();
-  }
+        //TODO use config
+        CONFIG::wait(0);
+    }
+    //read / bridge all input
+    ESPCOM::bridge();
+    //in case of restart requested
+    if (web_interface->restartmodule)
+    {
+        CONFIG::esp_restart();
+    }
 
 #ifdef ESP_OLED_FEATURE
-  static uint32_t last_oled_update = 0;
-  if (!CONFIG::is_locked(FLAG_BLOCK_OLED))
-  {
-    uint32_t now_oled = millis();
-    if (now_oled - last_oled_update > 1000)
+    static uint32_t last_oled_update = 0;
+    if (!CONFIG::is_locked(FLAG_BLOCK_OLED))
     {
-      last_oled_update = now_oled;
-      //refresh signal
-      if ((WiFi.getMode() == WIFI_OFF) || !wifi_config.WiFi_on)
-      {
-        OLED_DISPLAY::display_signal(-1);
-      }
-      else
-      {
-        OLED_DISPLAY::display_signal(wifi_config.getSignal(WiFi.RSSI()));
-      }
-      //if line 0 is > 85 refresh
-      if (OLED_DISPLAY::L0_size > 85)
-      {
-        OLED_DISPLAY::display_text(OLED_DISPLAY::L0.c_str(), 0, 0, 85);
-      }
-      //if line 1 is > 128 refresh
-      if (OLED_DISPLAY::L1_size > 128)
-      {
-        OLED_DISPLAY::display_text(OLED_DISPLAY::L1.c_str(), 0, 16, 128);
-      }
-      //if line 2 is > 128 refresh
-      if (OLED_DISPLAY::L2_size > 128)
-      {
-        OLED_DISPLAY::display_text(OLED_DISPLAY::L2.c_str(), 0, 32, 128);
-      }
-      //if line 3 is > 128 refresh
-      if (OLED_DISPLAY::L3_size > 128)
-      {
-        OLED_DISPLAY::display_text(OLED_DISPLAY::L3.c_str(), 0, 48, 128);
-      }
-      OLED_DISPLAY::update_lcd();
+        uint32_t now_oled = millis();
+        if (now_oled - last_oled_update > 1000)
+        {
+            last_oled_update = now_oled;
+            //refresh signal
+            if ((WiFi.getMode() == WIFI_OFF) || !wifi_config.WiFi_on)
+            {
+                OLED_DISPLAY::display_signal(-1);
+            }
+            else
+            {
+                OLED_DISPLAY::display_signal(wifi_config.getSignal(WiFi.RSSI()));
+            }
+            //if line 0 is > 85 refresh
+            if (OLED_DISPLAY::L0_size > 85)
+            {
+                OLED_DISPLAY::display_text(OLED_DISPLAY::L0.c_str(), 0, 0, 85);
+            }
+            //if line 1 is > 128 refresh
+            if (OLED_DISPLAY::L1_size > 128)
+            {
+                OLED_DISPLAY::display_text(OLED_DISPLAY::L1.c_str(), 0, 16, 128);
+            }
+            //if line 2 is > 128 refresh
+            if (OLED_DISPLAY::L2_size > 128)
+            {
+                OLED_DISPLAY::display_text(OLED_DISPLAY::L2.c_str(), 0, 32, 128);
+            }
+            //if line 3 is > 128 refresh
+            if (OLED_DISPLAY::L3_size > 128)
+            {
+                OLED_DISPLAY::display_text(OLED_DISPLAY::L3.c_str(), 0, 48, 128);
+            }
+            OLED_DISPLAY::update_lcd();
+        }
     }
-  }
 #endif
 
 #ifdef DHT_FEATURE
-  if (CONFIG::DHT_type != 255)
-  {
-    static uint32_t last_dht_update = 0;
-    uint32_t now_dht = millis();
-    if (now_dht - last_dht_update > (CONFIG::DHT_interval * 1000))
+    if (CONFIG::DHT_type != 255)
     {
-      last_dht_update = now_dht;
-      float humidity = dht.getHumidity();
-      float temperature = dht.getTemperature();
-      if (strcmp(dht.getStatusString(), "OK") == 0)
-      {
-        String s = String(temperature, 2);
-        String s2 = s + " " + String(humidity, 2);
-        s = "DHT:" + s2;
-        socket_server->sendTXT(ESPCOM::current_socket_id, s);
-#ifdef ESP_OLED_FEATURE
-        if (!CONFIG::is_locked(FLAG_BLOCK_OLED))
+        static uint32_t last_dht_update = 0;
+        uint32_t now_dht = millis();
+        if (now_dht - last_dht_update > (CONFIG::DHT_interval * 1000))
         {
-          s = String(temperature, 2);
-          s += "°C";
-          OLED_DISPLAY::display_text(s.c_str(), 84, 16);
+            last_dht_update = now_dht;
+            float humidity = dht.getHumidity();
+            float temperature = dht.getTemperature();
+            if (strcmp(dht.getStatusString(), "OK") == 0)
+            {
+                String s = String(temperature, 2);
+                String s2 = s + " " + String(humidity, 2);
+                s = "DHT:" + s2;
+                socket_server->sendTXT(ESPCOM::current_socket_id, s);
+#ifdef ESP_OLED_FEATURE
+                if (!CONFIG::is_locked(FLAG_BLOCK_OLED))
+                {
+                    s = String(temperature, 2);
+                    s += "°C";
+                    OLED_DISPLAY::display_text(s.c_str(), 84, 16);
+                }
+#endif
+            }
         }
-#endif
-      }
     }
-  }
 #endif
-  //todo use config
-  CONFIG::wait(0);
+    //todo use config
+    CONFIG::wait(0);
 }
