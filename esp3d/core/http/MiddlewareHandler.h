@@ -3,17 +3,18 @@
 
 #include <vector>
 #include <algorithm>
+#include <functional>
 
 #include "HTTPHandlerFunction.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
 
-std::function<void()> BuildMiddlewareHandleChain(std::vector<HTTPHandleFunction*> &middlewares, HTTPRequest &req, HTTPResponse &resp, std::function<void()> &next) {
+std::function<void()> &BuildMiddlewareHandleChain(std::vector<HTTPMiddlewareFunction*> &middlewares, HTTPRequest &req, HTTPResponse &resp, std::function<void()> &next) {
     std::function<void()> newNext = next;
     if(middlewares.size()){
         auto itMw = middlewares.rbegin();
         while(itMw != middlewares.rend()){
-            newNext = std::function<void()>(std::bind((*itMw), &req, &resp, next));
+            newNext = std::function<void()>(std::bind((*itMw), req, resp, next));
             itMw++;
         }
     }
