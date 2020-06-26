@@ -25,6 +25,7 @@ public:
     HTTPResponse &header(String key, String value)
     {
         _headers.insert({key, value});
+        return *this;
     }
 
     /**
@@ -49,10 +50,10 @@ private:
         return _wifiClient.write(c, l);
     }
 
-    size_t write(PGM_P b, size_t l)
-    {
-        return _wifiClient.write(b, l);
-    }
+    // size_t write(PGM_P b, size_t l)
+    // {
+    //     return _wifiClient.write(b, l);
+    // }
 };
 
 #endif
